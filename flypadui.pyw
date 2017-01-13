@@ -28,7 +28,7 @@ class Timer():
         return '{0:02d}'.format(int(mins))+":"+'{0:02d}'.format(int(secs))
 
     def reset(self):
-        self.timestart = dt.datetime.now()
+        self.elapsed = dt.datetime.now() - self.timestart
 
     def start(self):
         self.started = True
@@ -43,7 +43,6 @@ class Timer():
             self.elapsed = dt.datetime.now() - self.timestart
         else:
             self.timestart = dt.datetime.now()
-            self.elapsed = dt.datetime.now() - self.timestart
 
 
 class App():
@@ -63,6 +62,11 @@ class App():
 
         ### STYLE
         # colors
+        self.hour = -1
+        self.labels = []
+        # title
+        self.title = Label(self.root, text="FlyPAD Experiments UI")
+        self.title.place(relx=0.5, rely=0.1, anchor = CENTER)
         self.clock = Label(self.root, text="")
         self.clock.place(relx=0.9, rely=0.1, anchor = CENTER)
         self.timings = [Timer(), Timer(), Timer(), Timer(), Timer()]
@@ -72,21 +76,22 @@ class App():
         self.status = [Label(self.main, text="STOPPED"), Label(self.main, text="STOPPED"), Label(self.main, text="STOPPED"), Label(self.main, text="STOPPED"), Label(self.main, text="STOPPED")]
         self.setTime()
 
-        # title
-        self.title = Label(self.root, text="FlyPAD Experiments UI")
-        self.title.place(relx=0.5, rely=0.1, anchor = CENTER)
-
         # main grid
         epad = 30
         expad = 60
         bxpad = 10
         lxpad = 60
-        Label(self.main, text="Filename", font=titlefont(24), bg=self.current_bg, fg="white").grid(row=0,column=1, pady=epad)
-        Label(self.main, text="Start/stop", font=titlefont(24), bg=self.current_bg, fg="white").grid(row=0,column=2, columnspan=2, pady=epad)
-        Label(self.main, text="Timer", font=titlefont(24), bg=self.current_bg, fg="white").grid(row=0,column=4, pady=epad)
-        Label(self.main, text="Status", font=titlefont(24), bg=self.current_bg, fg="white").grid(row=0,column=5, pady=epad)
+        self.labels.append(Label(self.main, text="Filename", font=titlefont(24), bg=self.current_bg, fg="white"))
+        self.labels[-1].grid(row=0,column=1, pady=epad)
+        self.labels.append(Label(self.main, text="Start/Stop", font=titlefont(24), bg=self.current_bg, fg="white"))
+        self.labels[-1].grid(row=0,column=2, columnspan=2, pady=epad)
+        self.labels.append(Label(self.main, text="Timer", font=titlefont(24), bg=self.current_bg, fg="white"))
+        self.labels[-1].grid(row=0,column=4, pady=epad)
+        self.labels.append(Label(self.main, text="Status", font=titlefont(24), bg=self.current_bg, fg="white"))
+        self.labels[-1].grid(row=0,column=5, pady=epad)
         for i in range(5):
-            Label(self.main, text="FlyPAD "+str(i+1), font=bodyfont(24), bg=self.current_bg).grid(row=i+1,column=0, pady=epad)
+            self.labels.append(Label(self.main, text="FlyPAD "+str(i+1), font=bodyfont(24), bg=self.current_bg))
+            self.labels[-1].grid(row=i+1,column=0, pady=epad)
             Entry(self.main, width=30).grid(row=i+1,column=1, pady=epad, padx= expad)
             Button(self.main, text="▶", font=titlefont(12), fg=self.current_bg, command=self.timings[i].start).grid(row=i+1,column=2, pady=epad, padx= bxpad)
             Button(self.main, text="■", font=titlefont(24), fg=self.current_bg, command=self.timings[i].stop).grid(row=i+1,column=3, pady=epad, padx= bxpad)
@@ -108,11 +113,17 @@ class App():
         self.root.destroy()
 
     def setTime(self):
-        hour = int(t.strftime("%H", t.localtime()))
-        if (hour-9) < 0 or (hour-9)>(len(bgcols)-1):
-            self.current_bg = "#22313F"  ### nighttime color
-        else:
-            self.current_bg = bgcols[hour-9]
+        old = self.hour
+        self.hour = int(t.strftime("%H", t.localtime()))
+        if (old-self.hour) != 0:
+            if (self.hour-9) < 0 or (self.hour-9)>(len(bgcols)-1):
+                self.current_bg = "#22313F"  ### nighttime color
+            else:
+                self.current_bg = bgcols[self.hour-9]
+            for label in self.labels:
+                label.configure(bg=self.current_bg)
+            self.title.configure(bg=self.current_bg)
+            self.main.configure(bg=self.current_bg)
         ## set current time
         now = t.strftime("%a, %d %b %Y\n%H:%M:%S" , t.localtime())
         for i in range(5):
@@ -123,7 +134,7 @@ class App():
             else:
                 status_color = "white"
                 status_text = "STOPPED"
-            self.status[i].configure(text=status_text, fg=status_color)
+            self.status[i].configure(text=status_text, fg=status_color, bg=self.current_bg)
             self.timer[i].configure(text=self.timings[i].get(), bg=self.current_bg)
         self.clock.configure(text=now, bg=self.current_bg)
         self.root.configure(background=self.current_bg)
